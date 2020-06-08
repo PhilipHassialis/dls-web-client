@@ -1,57 +1,64 @@
 import React from "react";
-import { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import { useRef, useEffect } from "react";
+import { loadInstallationsAsync } from "../actions/installations/installationActions";
+import { connect } from "react-redux";
+import { SELECT_INSTALLATION } from "../store/actionTypes";
 
-export default function InstallationsList() {
-	const [installations, setInstallations] = useState(null);
+const InstallationsList = (props) => {
+    const {
+        availableInstallations,
+        loadInstallations,
+        selectInstallation,
+    } = props;
 
-	const isFirstRun = useRef(true);
-	useEffect(() => {
-		if (isFirstRun.current) {
-			isFirstRun.current = false;
-			// fetch("http://192.168.0.160:39005/installations", {
-			// 	method: "post",
-			// 	mode: "no-cors"
-			// }).then(data => console.log(data));
-			axios
-				.post("http://192.168.0.160:39005/installations", {
-					Allowcrossdomain: true
-				})
-				.then(
-					response => {
-						console.log(response.data.Data);
-						setInstallations(response.data.Data);
-					},
-					error => {
-						console.log(error);
-					}
-				);
-			return;
-		}
+    const isFirstRun = useRef(true);
+    useEffect(() => {
+        if (isFirstRun.current) {
+            isFirstRun.current = false;
+            loadInstallations();
+        }
 
-		console.log("Effect was run");
-	});
+        console.log("Effect was run");
+    });
 
-	var content = <div>Please wait</div>;
+    var content = <div>Please wait</div>;
 
-	if (installations != null) {
-		content = (
-			<select className="form-control">
-				<option value="">Please select...</option>
-				{installations.map(dls => (
-					<option key={dls.Code} value={dls.url+":"+dls.Port}>
-						{dls.Name}
-					</option>
-				))}
-			</select>
-		);
-	}
+    if (availableInstallations != null && availableInstallations.length) {
+        content = (
+            <select
+                className="form-control"
+                onChange={(e) => selectInstallation(e.target.value)}
+            >
+                <option value="">Please select...</option>
+                {availableInstallations.map((dls) => (
+                    <option key={dls.Code} value={dls.url + ":" + dls.Port}>
+                        {dls.Name}
+                    </option>
+                ))}
+            </select>
+        );
+    }
 
-	return (
-		<div className="mr-3 container-sm ">
-			<form>
-				<div className="form-group">{content}</div>
-			</form>
-		</div>
-	);
-}
+    return (
+        <div className="mr-3 container-sm ">
+            <div className="form-group">{content}</div>
+        </div>
+    );
+};
+
+const mapStateToProps = (state) => {
+    return {
+        availableInstallations: state.availableInstallations,
+        installation: state.installation,
+    };
+};
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        loadInstallations: () => dispatch(loadInstallationsAsync()),
+        selectInstallation: (value) =>
+            dispatch({ type: SELECT_INSTALLATION, payload: value }),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(InstallationsList);
